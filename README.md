@@ -35,7 +35,8 @@ Locally, data, cache and results are stored in `runtime/` rather than on Google 
 | 0 | Config and setup | passed in Colab (Python 3.13, crewai 1.15.28) |
 | 1 | Gemini and CrewAI smoke test | passed in Colab on both models |
 | 2 | Data download, parsing, license table | passed locally (1,302 phishing, 4,150 legitimate) |
-| 3–11 | Splits, tools, baseline, agents, evaluation, demo | not started |
+| 3 | Dedupe, split, 100-email subset, demo picks | passed locally (5,185 after dedupe; subset 50/50) |
+| 4–11 | Tools, baseline, agents, evaluation, demo | not started |
 
 ## Data sources and licenses
 
