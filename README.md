@@ -39,7 +39,8 @@ Locally, data, cache and results are stored in `runtime/` rather than on Google 
 | 4 | Technical Analyst tools, tools-only metrics | passed locally (precision 1.0, recall 0.26, F1 0.41) |
 | 5 | TF-IDF + logistic regression baseline | passed locally (F1 0.97 held-out, 0.99 subset; see leakage note) |
 | 6 | LLM plumbing: cache, daily counter, throttle, retry, parsing | passed locally (survived 4 real 503s; cache hit on rerun) |
-| 7–11 | Agents, LLM-only config, evaluation, demo | not started |
+| 7 | Agents and capped disagreement round | passed locally on the fallback model (primary was overloaded with 503s) |
+| 8–11 | LLM-only config, evaluation, demo | not started |
 
 ## Data sources and licenses
 

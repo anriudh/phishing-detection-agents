@@ -47,9 +47,12 @@ def main():
     parser.add_argument("--until", help="stop after the first code cell whose source contains this text")
     parser.add_argument("--smoke-test", action="store_true",
                         help="also run the Stage 1 smoke test (about 3 API requests); skipped by default")
+    parser.add_argument("--model", help="use this Gemini model instead of the config's PRIMARY_MODEL (development only)")
     args = parser.parse_args()
-    # The kernel inherits this environment variable; the notebook's config cell reads it.
+    # The kernel inherits these environment variables; the notebook's config cell reads them.
     os.environ["RUN_SMOKE_TEST"] = "1" if args.smoke_test else "0"
+    if args.model:
+        os.environ["PHISH_MODEL"] = args.model
 
     nb = nbformat.read(NOTEBOOK, as_version=4)
     if args.until:
