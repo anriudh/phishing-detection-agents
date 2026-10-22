@@ -23,8 +23,8 @@ It uses three CrewAI agents on the Google Gemini free tier:
 
 | Stage | What it covers | Status |
 |---|---|---|
-| 0 | Config and setup | written, not yet run in Colab |
-| 1 | Gemini and CrewAI smoke test | written, not yet run in Colab |
+| 0 | Config and setup | passed in Colab (Python 3.13, crewai 1.15.28) |
+| 1 | Gemini and CrewAI smoke test | passed in Colab on both models |
 | 2 | Data download, parsing, license table | written, not yet run in Colab |
 | 3–11 | Splits, tools, baseline, agents, evaluation, demo | not started |
 
