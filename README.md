@@ -19,13 +19,22 @@ It uses three CrewAI agents on the Google Gemini free tier:
 2. Add your Gemini API key in Colab Secrets (the key icon in the sidebar) under the name `GEMINI_API_KEY`, and turn on notebook access for it. Never paste the key into a cell.
 3. Run the cells top to bottom. When asked, allow Google Drive access. Cached results are stored under `/MyDrive/phish_project/`.
 
+### Running locally (development)
+
+The same notebook also runs on a local machine, which is how development is done:
+1. Create a venv with Python 3.13 at `%USERPROFILE%\.venvs\phishing` (outside OneDrive) and install `requirements.txt` into it.
+2. Put the key in a `.env` file in this folder, as one line: `GEMINI_API_KEY=...`. The `.env` file is git-ignored.
+3. Run `~/.venvs/phishing/Scripts/python run_notebook.py`, or add `--until "Checkpoint 2"` to stop early. Outputs go to `runtime/executed.ipynb`, which is also git-ignored.
+
+Locally, data, cache and results are stored in `runtime/` rather than on Google Drive.
+
 ## Status
 
 | Stage | What it covers | Status |
 |---|---|---|
 | 0 | Config and setup | passed in Colab (Python 3.13, crewai 1.15.28) |
 | 1 | Gemini and CrewAI smoke test | passed in Colab on both models |
-| 2 | Data download, parsing, license table | written, not yet run in Colab |
+| 2 | Data download, parsing, license table | passed locally (1,302 phishing, 4,150 legitimate) |
 | 3–11 | Splits, tools, baseline, agents, evaluation, demo | not started |
 
 ## Data sources and licenses

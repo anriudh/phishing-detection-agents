@@ -2,6 +2,7 @@
 data/
 cache/
 results/
+runtime/
 *.eml
 *.mbox
 

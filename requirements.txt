@@ -1,0 +1,7 @@
+# Local runs only. Colab installs crewai itself and already has the rest.
+crewai[google-genai]==1.15.28
+pandas
+pyarrow
+ipykernel
+nbclient
+nbformat
