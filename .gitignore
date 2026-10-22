@@ -1,0 +1,16 @@
+# Runtime data lives on Google Drive, never in the repo
+data/
+cache/
+results/
+*.eml
+*.mbox
+
+# Secrets
+.env
+*.key
+
+# Python / Jupyter
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+venv/
