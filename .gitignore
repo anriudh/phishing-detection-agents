@@ -15,3 +15,6 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 venv/
+
+# Local report exports (Word/PDF), kept out of the repo
+deliverables/

@@ -91,7 +91,7 @@ Six full-system verdicts were scored 1–3 for grounded, understandable and acti
 
 - **Era gap.** See the note under Data sources. The robustness set tests it, but only with 20 emails, and Claude wrote them rather than taking them from real mailboxes.
 - **The full system doesn't beat LLM-only.** It uses 2.8 times the requests for a slightly lower recall.
-- **Passing authentication read as reassurance.** In three of the four full-system misses, the first reason cites passing SPF/DKIM/DMARC, even though the prompt warns that phishing can pass these checks.
+- **Passing authentication read as reassurance.** In three of the four full-system misses, the first reason cites passing SPF/DKIM/DMARC, The Verdict prompt doesn't tell the agent to treat passing authentication as neutral.
 - **The disagreement round can cause misses.** On `d469ad8478093057` the round lowered the score from 50 to 35, which turned a correct "suspicious" into a miss. Three of the four label changes moved scores down.
 - **Attachments are never read.** `da18baee8ba4579e` carries its phishing in a `.htm` attachment, and the parser only reads body parts.
 - **Small sample.** 100 emails, one model, one prompt version.
