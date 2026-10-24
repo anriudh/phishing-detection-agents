@@ -19,6 +19,15 @@ It uses three CrewAI agents on the Google Gemini free tier:
 2. Add your Gemini API key in Colab Secrets (the key icon in the sidebar) under the name `GEMINI_API_KEY`, and turn on notebook access for it. Never paste the key into a cell.
 3. Run the cells top to bottom. When asked, allow Google Drive access. Cached results are stored under `/MyDrive/phish_project/`.
 
+A run from an empty cache spends about 420 Gemini requests (the free tier allows 500 a day), and the Stage 11 demo only works from the cache. To reuse the results from development instead:
+
+1. Upload `phish_project_cache.zip` (it holds the `cache/` and `results/` folders) to the top of My Drive.
+2. Run the Stage 0 setup cells so Drive is mounted, then run this in a new cell:
+   ```
+   !unzip -n /content/drive/MyDrive/phish_project_cache.zip -d /content/drive/MyDrive/phish_project/
+   ```
+3. Then use Runtime → Run all. Every LLM step should report "0 new requests".
+
 ### Running locally (development)
 
 The same notebook also runs on a local machine, which is how development is done:
@@ -39,8 +48,53 @@ Locally, data, cache and results are stored in `runtime/` rather than on Google 
 | 4 | Technical Analyst tools, tools-only metrics | passed locally (precision 1.0, recall 0.26, F1 0.41) |
 | 5 | TF-IDF + logistic regression baseline | passed locally (F1 0.97 held-out, 0.99 subset; see leakage note) |
 | 6 | LLM plumbing: cache, daily counter, throttle, retry, parsing | passed locally (survived 4 real 503s; cache hit on rerun) |
-| 7 | Agents and capped disagreement round | passed locally on the fallback model (primary was overloaded with 503s) |
-| 8–11 | LLM-only config, evaluation, demo | not started |
+| 7 | Agents and capped disagreement round | passed locally |
+| 8 | LLM-only configuration | passed locally |
+| 9 | Evaluation of all four configurations on the 100-email subset | passed locally (0 errors) |
+| 9b | Robustness set: 20 synthetic modern legitimate emails | passed locally |
+| 10 | Explanation quality rubric on six verdicts | passed locally (no API calls) |
+| 11 | Cache-only demo with network connections switched off | passed locally (0 new requests) |
+
+All evaluation uses `gemini-3.5-flash-lite` with prompt version v3. `gemini-3.1-flash-lite` is only the fallback, used if the primary model fails the smoke test.
+
+## Results
+
+### 100-email subset (50 phishing, 50 legitimate)
+
+"Suspicious" counts as a phishing prediction. A failed analysis counts as wrong.
+
+| Configuration | Precision | Recall | F1 | Gemini requests |
+|---|---|---|---|---|
+| Tools only (Technical Analyst) | 1.00 | 0.26 | 0.413 | 0 |
+| TF-IDF + logistic regression baseline | 0.98 | 1.00 | 0.990 | 0 |
+| LLM only | 1.00 | 0.94 | 0.969 | 100 |
+| Full system (three agents) | 1.00 | 0.92 | 0.958 | 276 |
+
+The full system ran 38 disagreement rounds. Four of them changed the label, and four quotes not found in the email were dropped as hallucinated.
+
+### Robustness set (20 modern legitimate emails)
+
+| Configuration | Flagged phishing | Flagged suspicious | False-positive rate |
+|---|---|---|---|
+| Tools only | 0 | 0 | 0/20 |
+| TF-IDF baseline | 11 | 6 | 17/20 (0.85) |
+| LLM only | 0 | 0 | 0/20 |
+| Full system | 0 | 0 | 0/20 |
+
+The baseline's near-perfect subset score doesn't hold up on modern legitimate mail: it flags 85% of it. That points to it learning the era gap (below) rather than phishing signals.
+
+### Explanation quality (Stage 10)
+
+Six full-system verdicts were scored 1–3 for grounded, understandable and action, out of 9. The four correct verdicts average 8.75/9 and the two misses average 5.5/9. One rater (Claude) scored them with no inter-rater check, so treat this as an illustration.
+
+## Limitations
+
+- **Era gap.** See the note under Data sources. The robustness set tests it, but only with 20 emails, and Claude wrote them rather than taking them from real mailboxes.
+- **The full system doesn't beat LLM-only.** It uses 2.8 times the requests for a slightly lower recall.
+- **Passing authentication read as reassurance.** In three of the four full-system misses, the first reason cites passing SPF/DKIM/DMARC, even though the prompt warns that phishing can pass these checks.
+- **The disagreement round can cause misses.** On `d469ad8478093057` the round lowered the score from 50 to 35, which turned a correct "suspicious" into a miss. Three of the four label changes moved scores down.
+- **Attachments are never read.** `da18baee8ba4579e` carries its phishing in a `.htm` attachment, and the parser only reads body parts.
+- **Small sample.** 100 emails, one model, one prompt version.
 
 ## Data sources and licenses
 
