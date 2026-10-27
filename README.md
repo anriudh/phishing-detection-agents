@@ -21,10 +21,18 @@ It uses three CrewAI agents on the Google Gemini free tier:
 
 A run from an empty cache spends about 420 Gemini requests (the free tier allows 500 a day), and the Stage 11 demo only works from the cache. To reuse the results from development instead:
 
-1. Upload `phish_project_cache.zip` (it holds the `cache/` and `results/` folders) to the top of My Drive.
-2. Run the Stage 0 setup cells so Drive is mounted, then run this in a new cell:
+1. Mount Drive and upload `phish_project_cache.zip` (it holds the `cache/` and `results/` folders) into the Colab session, not into Drive. Unzipping straight into a Drive folder can leave unreadable directories.
+   ```python
+   from google.colab import drive, files
+   drive.mount("/content/drive")
+   files.upload()   # pick phish_project_cache.zip
    ```
-   !unzip -n /content/drive/MyDrive/phish_project_cache.zip -d /content/drive/MyDrive/phish_project/
+2. Unzip it locally, then copy it into Drive:
+   ```
+   !unzip -q -o /content/phish_project_cache.zip -d /content/restore
+   !mkdir -p /content/drive/MyDrive/phish_project
+   !cp -r /content/restore/cache /content/restore/results /content/drive/MyDrive/phish_project/
+   !find /content/drive/MyDrive/phish_project/cache -type f | wc -l   # expect 472
    ```
 3. Then use Runtime → Run all. Every LLM step should report "0 new requests".
 
@@ -54,6 +62,8 @@ Locally, data, cache and results are stored in `runtime/` rather than on Google 
 | 9b | Robustness set: 20 synthetic modern legitimate emails | passed locally |
 | 10 | Explanation quality rubric on six verdicts | passed locally (no API calls) |
 | 11 | Cache-only demo with network connections switched off | passed locally (0 new requests) |
+
+On 27 Oct 2026 a full Run all also passed in Colab from the restored cache. It gave the same 5,185 emails and the same results tables, made no new requests after the Stage 1 smoke test, and the Stage 11 demo ran with no cache misses.
 
 All evaluation uses `gemini-3.5-flash-lite` with prompt version v3. `gemini-3.1-flash-lite` is only the fallback, used if the primary model fails the smoke test.
 
