@@ -1,127 +1,113 @@
-# Agentic Phishing Email Detection and Explanation
+# Phishing Detection Agents
 
-A college AI project. Given a raw email (headers and body), the system returns:
+Three CrewAI agents read a raw email, decide whether it is phishing, and explain why in plain English.
 
-- a verdict: phishing, suspicious, or legitimate
-- a risk score from 0 to 100
-- plain-English reasons, each tied to specific evidence
-- a recommended action for the reader
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/anriudh/phishing-detection-agents/blob/main/phishing_detection.ipynb)
+![Python 3.13](https://img.shields.io/badge/python-3.13-blue)
+![CrewAI](https://img.shields.io/badge/CrewAI-1.15-orange)
+![Gemini free tier](https://img.shields.io/badge/Gemini-free%20tier-8E75B2)
 
-It uses three CrewAI agents on the Google Gemini free tier:
+For each email the system returns:
 
-- **Technical Analyst**: deterministic Python checks on headers and URLs. It runs offline.
-- **Content Analyst**: an LLM that identifies the email's intent and its social-engineering tactics.
-- **Verdict and Explainer**: merges both reports. If the analysts disagree, it asks one of them a single follow-up question.
+- **Verdict:** phishing, suspicious or legitimate
+- **Risk score:** 0 to 100
+- **Reasons:** each one tied to a quoted piece of evidence
+- **Action:** what the reader should do next
 
-## How to run
+## How it works
 
-1. Open `phishing_detection.ipynb` in Google Colab (File → Upload notebook).
-2. Add your Gemini API key in Colab Secrets (the key icon in the sidebar) under the name `GEMINI_API_KEY`, and turn on notebook access for it. Never paste the key into a cell.
-3. Run the cells top to bottom. When asked, allow Google Drive access. Cached results are stored under `/MyDrive/phish_project/`.
+```mermaid
+flowchart LR
+    E[Raw email] --> T[Technical Analyst<br/>Python checks on headers and URLs]
+    E --> C[Content Analyst<br/>LLM: intent and social-engineering tactics]
+    T --> V[Verdict and Explainer<br/>LLM]
+    C --> V
+    V -- analysts disagree --> Q[One follow-up question<br/>to one analyst]
+    Q --> V
+    V --> O[Verdict, score, reasons, action]
+```
 
-A run from an empty cache spends about 420 Gemini requests (the free tier allows 500 a day), and the Stage 11 demo only works from the cache. To reuse the results from development instead:
+- **Technical Analyst:** deterministic, runs offline, makes no API calls.
+- **Content Analyst:** reads the body only, with no headers.
+- **Verdict and Explainer:** merges both reports. When the two analysts disagree, it asks one of them a single follow-up question, and only once. It drops any quote that does not appear in the email.
 
-1. Mount Drive and upload `phish_project_cache.zip` (it holds the `cache/` and `results/` folders) into the Colab session, not into Drive. Unzipping straight into a Drive folder can leave unreadable directories.
-   ```python
-   from google.colab import drive, files
-   drive.mount("/content/drive")
-   files.upload()   # pick phish_project_cache.zip
-   ```
-2. Unzip it locally, then copy it into Drive:
-   ```
-   !unzip -q -o /content/phish_project_cache.zip -d /content/restore
-   !mkdir -p /content/drive/MyDrive/phish_project
-   !cp -r /content/restore/cache /content/restore/results /content/drive/MyDrive/phish_project/
-   !find /content/drive/MyDrive/phish_project/cache -type f | wc -l   # expect 472
-   ```
-3. Then use Runtime → Run all. Every LLM step should report "0 new requests".
-
-### Running locally (development)
-
-The same notebook also runs on a local machine, which is how development is done:
-1. Create a venv with Python 3.13 at `%USERPROFILE%\.venvs\phishing` (outside OneDrive) and install `requirements.txt` into it.
-2. Put the key in a `.env` file in this folder, as one line: `GEMINI_API_KEY=...`. The `.env` file is git-ignored.
-3. Run `~/.venvs/phishing/Scripts/python run_notebook.py`, or add `--until "Checkpoint 2"` to stop early. Outputs go to `runtime/executed.ipynb`, which is also git-ignored.
-
-Locally, data, cache and results are stored in `runtime/` rather than on Google Drive.
-
-## Status
-
-| Stage | What it covers | Status |
-|---|---|---|
-| 0 | Config and setup | passed in Colab (Python 3.13, crewai 1.15.28) |
-| 1 | Gemini and CrewAI smoke test | passed in Colab on both models |
-| 2 | Data download, parsing, license table | passed locally (1,302 phishing, 4,150 legitimate) |
-| 3 | Dedupe, split, 100-email subset, demo picks | passed locally (5,185 after dedupe; subset 50/50) |
-| 4 | Technical Analyst tools, tools-only metrics | passed locally (precision 1.0, recall 0.26, F1 0.41) |
-| 5 | TF-IDF + logistic regression baseline | passed locally (F1 0.97 held-out, 0.99 subset; see leakage note) |
-| 6 | LLM plumbing: cache, daily counter, throttle, retry, parsing | passed locally (survived 4 real 503s; cache hit on rerun) |
-| 7 | Agents and capped disagreement round | passed locally |
-| 8 | LLM-only configuration | passed locally |
-| 9 | Evaluation of all four configurations on the 100-email subset | passed locally (0 errors) |
-| 9b | Robustness set: 20 synthetic modern legitimate emails | passed locally |
-| 10 | Explanation quality rubric on six verdicts | passed locally (no API calls) |
-| 11 | Cache-only demo with network connections switched off | passed locally (0 new requests) |
-
-On 27 Oct 2026 a full Run all also passed in Colab from the restored cache. It gave the same 5,185 emails and the same results tables, made no new requests after the Stage 1 smoke test, and the Stage 11 demo ran with no cache misses.
-
-All evaluation uses `gemini-3.5-flash-lite` with prompt version v3. `gemini-3.1-flash-lite` is only the fallback, used if the primary model fails the smoke test.
+Every LLM response is cached on disk by model, prompt version, configuration and email, so a rerun costs nothing.
 
 ## Results
 
-### 100-email subset (50 phishing, 50 legitimate)
-
-"Suspicious" counts as a phishing prediction. A failed analysis counts as wrong.
+Results on 100 held-out emails (50 phishing, 50 legitimate), using `gemini-3.5-flash-lite`. A "suspicious" verdict counts as predicting phishing.
 
 | Configuration | Precision | Recall | F1 | Gemini requests |
-|---|---|---|---|---|
+|---|---:|---:|---:|---:|
 | Tools only (Technical Analyst) | 1.00 | 0.26 | 0.413 | 0 |
-| TF-IDF + logistic regression baseline | 0.98 | 1.00 | 0.990 | 0 |
+| TF-IDF + logistic regression | 0.98 | 1.00 | **0.990** | 0 |
 | LLM only | 1.00 | 0.94 | 0.969 | 100 |
 | Full system (three agents) | 1.00 | 0.92 | 0.958 | 276 |
 
-The full system ran 38 disagreement rounds. Four of them changed the label, and four quotes not found in the email were dropped as hallucinated.
+Each configuration also ran on 20 modern legitimate emails:
 
-### Robustness set (20 modern legitimate emails)
+| Configuration | False positives |
+|---|---:|
+| TF-IDF baseline | **17 / 20** |
+| Tools only, LLM only, full system | 0 / 20 |
 
-| Configuration | Flagged phishing | Flagged suspicious | False-positive rate |
-|---|---|---|---|
-| Tools only | 0 | 0 | 0/20 |
-| TF-IDF baseline | 11 | 6 | 17/20 (0.85) |
-| LLM only | 0 | 0 | 0/20 |
-| Full system | 0 | 0 | 0/20 |
+The baseline's near-perfect score does not carry over to modern legitimate mail. It mostly learned the gap in age between the two datasets (see [Limitations](#limitations)), not phishing signals. The agents explain their verdicts well: the four correct verdicts averaged 8.75 out of 9 on an explanation rubric. They did not, however, beat a single LLM call on accuracy.
 
-The baseline's near-perfect subset score doesn't hold up on modern legitimate mail: it flags 85% of it. That points to it learning the era gap (below) rather than phishing signals.
+The full write-up is in [REPORT.md](REPORT.md), and the slides are in [PRESENTATION.pptx](PRESENTATION.pptx).
 
-### Explanation quality (Stage 10)
+## Quick start (Colab)
 
-Six full-system verdicts were scored 1–3 for grounded, understandable and action, out of 9. The four correct verdicts average 8.75/9 and the two misses average 5.5/9. One rater (Claude) scored them with no inter-rater check, so treat this as an illustration.
+1. Open the notebook with the **Open in Colab** badge above.
+2. Add a Gemini API key in Colab Secrets (the key icon in the sidebar) as `GEMINI_API_KEY`, and turn on notebook access for it.
+3. Choose **Runtime → Run all** and allow Google Drive access when Colab asks. The notebook stores its data and cache in `MyDrive/phish_project/`.
+
+A run with an empty cache uses about 420 Gemini requests, and the free tier allows 500 a day. To skip that and reuse the cached results, run this in a new cell before **Run all**:
+
+```python
+from google.colab import drive
+drive.mount("/content/drive")
+!wget -q https://github.com/anriudh/phishing-detection-agents/releases/latest/download/phish_project_cache.zip -O /content/cache.zip
+!unzip -q -o /content/cache.zip -d /content/restore
+!mkdir -p /content/drive/MyDrive/phish_project
+!cp -r /content/restore/cache /content/restore/results /content/drive/MyDrive/phish_project/
+```
+
+Unzip into `/content` first, then copy into Drive. Unzipping straight into Drive can leave folders you cannot read. With the cache in place, every LLM stage should report `0 new requests`.
+
+<details>
+<summary>Running locally</summary>
+
+1. Create a Python 3.13 venv and install `requirements.txt` into it.
+2. Create a `.env` file next to the notebook containing one line: `GEMINI_API_KEY=...` (git ignores this file).
+3. Run `python run_notebook.py`, or add `--until "Checkpoint 2"` to stop early.
+
+When run locally, data, cache and results go in `runtime/` instead of Google Drive.
+</details>
+
+## Repository
+
+| File | What it is |
+|---|---|
+| [`phishing_detection.ipynb`](phishing_detection.ipynb) | The whole pipeline in 12 stages, each ending in a checkpoint cell |
+| [`run_notebook.py`](run_notebook.py) | Runs the notebook outside Jupyter |
+| [`REPORT.md`](REPORT.md) | Report: design, results, error analysis, limitations |
+| [`PRESENTATION.pptx`](PRESENTATION.pptx) | 10 slides with speaker notes |
 
 ## Limitations
 
-- **Era gap.** See the note under Data sources. The robustness set tests it, but only with 20 emails, and Claude wrote them rather than taking them from real mailboxes.
-- **The full system doesn't beat LLM-only.** It uses 2.8 times the requests for a slightly lower recall.
-- **Passing authentication read as reassurance.** In three of the four full-system misses, the first reason cites passing SPF/DKIM/DMARC, The Verdict prompt doesn't tell the agent to treat passing authentication as neutral.
-- **The disagreement round can cause misses.** On `d469ad8478093057` the round lowered the score from 50 to 35, which turned a correct "suspicious" into a miss. Three of the four label changes moved scores down.
-- **Attachments are never read.** `da18baee8ba4579e` carries its phishing in a `.htm` attachment, and the parser only reads body parts.
-- **Small sample.** 100 emails, one model, one prompt version.
+- **Data from different eras.** The phishing emails date from 2023 to 2025, and the legitimate ones from about 2002. To reduce the effect, the notebook removes date, routing and authentication headers from what the baseline and the LLM-only configuration see. The robustness check covers only 20 emails, and Claude wrote them.
+- **Passing authentication reads as reassurance.** In three of the four misses, the first reason given is that SPF, DKIM or DMARC passed.
+- **The follow-up round can hurt.** Three of the four label changes it caused lowered the risk score. One of them turned a correct "suspicious" into a miss.
+- **Attachments are not read.** One miss had its phishing content in a `.htm` attachment.
+- **The sample is small:** 100 emails, one model and one prompt version.
 
-## Data sources and licenses
+## Data
 
-Checked on 2026-10-22. The data is downloaded at run time into Google Drive and is not stored in this repo.
+The notebook downloads the data at run time. No email data is stored in this repo.
 
-| Source | Used as | Years | License / terms |
-|---|---|---|---|
-| [Nazario phishing corpus](https://monkey.org/~jose/phishing/), 2023–2025 mailboxes | phishing | 2023–2025 | CC-BY-4.0. Attribution: Jose Nazario. |
-| [SpamAssassin public corpus](https://spamassassin.apache.org/old/publiccorpus/), 20030228 easy_ham, easy_ham_2, hard_ham | legitimate | ~2002 | No formal license. Offered publicly for testing spam filters, and copyright stays with the original senders. |
+| Source | Used as | License |
+|---|---|---|
+| [Nazario phishing corpus](https://monkey.org/~jose/phishing/), 2023–2025 | Phishing | CC-BY-4.0, by Jose Nazario |
+| [SpamAssassin public corpus](https://spamassassin.apache.org/old/publiccorpus/): easy_ham, easy_ham_2, hard_ham | Legitimate | No formal license; published for testing spam filters |
 
-Considered but not used:
-- SpamAssassin spam, because spam isn't phishing.
-- Enron raw mail: 2001, 443 MB, no auth headers.
-- [Zenodo "Phishing Email Curated Datasets"](https://zenodo.org/records/8339691) (CC-BY-4.0): no full headers, labels spam rather than phishing, and the Enron copy is preprocessed.
-
-**Limitation:** the phishing emails come from 2023–2025 and the legitimate ones from about 2002, so a model could separate them by era rather than by phishing signals. The notebook reduces this by removing date, routing and auth headers from the inputs to the baseline and the LLM-only config. The Technical Analyst only scores an authentication header when it shows an outright fail.
-
-## Privacy
-
-Only public or synthetic emails are sent to Gemini. The free tier may use inputs to improve Google's models.
+Only public or synthetic emails are sent to Gemini. Google may use free-tier inputs to improve its models.
