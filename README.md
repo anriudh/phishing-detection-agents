@@ -20,10 +20,8 @@ For each email the system returns:
 flowchart TD
     E[Raw email] --> T[Technical Analyst<br/>header and URL checks]
     E --> C[Content Analyst<br/>intent and tactics]
-    T --> V[Verdict and Explainer]
+    T --> V[Verdict and Explainer<br/>one follow-up question if they disagree]
     C --> V
-    V -. follow-up if they disagree .-> T
-    V -. follow-up if they disagree .-> C
     V --> O[Verdict, score, reasons, action]
 ```
 
