@@ -19,5 +19,6 @@ venv/
 # Local report exports (Word/PDF), kept out of the repo
 deliverables/
 
-# Report, kept local only
+# Report and slides, kept local only
 REPORT.md
+PRESENTATION.pptx
