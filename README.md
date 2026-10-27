@@ -17,13 +17,13 @@ For each email the system returns:
 ## How it works
 
 ```mermaid
-flowchart LR
-    E[Raw email] --> T[Technical Analyst<br/>Python checks on headers and URLs]
-    E --> C[Content Analyst<br/>LLM: intent and social-engineering tactics]
-    T --> V[Verdict and Explainer<br/>LLM]
+flowchart TD
+    E[Raw email] --> T[Technical Analyst<br/>header and URL checks]
+    E --> C[Content Analyst<br/>intent and tactics]
+    T --> V[Verdict and Explainer]
     C --> V
-    V -- analysts disagree --> Q[One follow-up question<br/>to one analyst]
-    Q --> V
+    V -. follow-up if they disagree .-> T
+    V -. follow-up if they disagree .-> C
     V --> O[Verdict, score, reasons, action]
 ```
 
@@ -66,7 +66,8 @@ A run with an empty cache uses about 420 Gemini requests, and the free tier allo
 ```python
 from google.colab import drive
 drive.mount("/content/drive")
-!wget -q https://github.com/anriudh/phishing-detection-agents/releases/latest/download/phish_project_cache.zip -O /content/cache.zip
+repo = "https://github.com/anriudh/phishing-detection-agents"
+!wget -q {repo}/releases/latest/download/phish_project_cache.zip -O /content/cache.zip
 !unzip -q -o /content/cache.zip -d /content/restore
 !mkdir -p /content/drive/MyDrive/phish_project
 !cp -r /content/restore/cache /content/restore/results /content/drive/MyDrive/phish_project/
