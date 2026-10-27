@@ -18,3 +18,6 @@ venv/
 
 # Local report exports (Word/PDF), kept out of the repo
 deliverables/
+
+# Report, kept local only
+REPORT.md

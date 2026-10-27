@@ -51,7 +51,7 @@ Each configuration also ran on 20 modern legitimate emails:
 
 The baseline's near-perfect score does not carry over to modern legitimate mail. It mostly learned the gap in age between the two datasets (see [Limitations](#limitations)), not phishing signals. The agents explain their verdicts well: the four correct verdicts averaged 8.75 out of 9 on an explanation rubric. They did not, however, beat a single LLM call on accuracy.
 
-The full write-up is in [REPORT.md](REPORT.md), and the slides are in [PRESENTATION.pptx](PRESENTATION.pptx).
+The slides are in [PRESENTATION.pptx](PRESENTATION.pptx).
 
 ## Quick start (Colab)
 
@@ -89,7 +89,6 @@ When run locally, data, cache and results go in `runtime/` instead of Google Dri
 |---|---|
 | [`phishing_detection.ipynb`](phishing_detection.ipynb) | The whole pipeline in 12 stages, each ending in a checkpoint cell |
 | [`run_notebook.py`](run_notebook.py) | Runs the notebook outside Jupyter |
-| [`REPORT.md`](REPORT.md) | Report: design, results, error analysis, limitations |
 | [`PRESENTATION.pptx`](PRESENTATION.pptx) | 10 slides with speaker notes |
 
 ## Limitations
