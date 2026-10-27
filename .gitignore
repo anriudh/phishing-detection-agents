@@ -1,24 +1,10 @@
-# Runtime data lives on Google Drive, never in the repo
-data/
-cache/
-results/
+# Local runs keep data, cache and results here (on Google Drive in Colab)
 runtime/
-*.eml
-*.mbox
 
 # Secrets
 .env
-*.key
 
 # Python / Jupyter
 __pycache__/
 .ipynb_checkpoints/
 .venv/
-venv/
-
-# Local report exports (Word/PDF), kept out of the repo
-deliverables/
-
-# Report and slides, kept local only
-REPORT.md
-PRESENTATION.pptx
